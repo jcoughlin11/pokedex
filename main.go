@@ -24,9 +24,16 @@ func main() {
 		cmd, ok := KnownCommands[cleaned[0]]
 
 		if ok {
-			err := cmd.callback(&cfg)
-			if err != nil {
-				fmt.Println(err)
+			if len(cleaned) == 2 {
+				err := cmd.callback(&cfg, cleaned[1])
+				if err != nil {
+					fmt.Println(err)
+				}
+			} else {
+				err := cmd.callback(&cfg, "")
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		} else {
 			fmt.Println("Unknown command")
