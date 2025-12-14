@@ -31,56 +31,17 @@ type LocationResponse struct {
 }
 
 type PokemonResponse struct {
-	EncounterMethodRates []struct {
-		EncounterMethod struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"encounter_method"`
-		VersionDetails []struct {
-			Rate    int `json:"rate"`
-			Version struct {
-				Name string `json:"name"`
-				URL  string `json:"url"`
-			} `json:"version"`
-		} `json:"version_details"`
-	} `json:"encounter_method_rates"`
-	GameIndex int `json:"game_index"`
-	ID        int `json:"id"`
-	Location  struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"location"`
-	Name  string `json:"name"`
-	Names []struct {
-		Language struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"language"`
-		Name string `json:"name"`
-	} `json:"names"`
 	PokemonEncounters []struct {
 		Pokemon struct {
 			Name string `json:"name"`
 			URL  string `json:"url"`
 		} `json:"pokemon"`
-		VersionDetails []struct {
-			EncounterDetails []struct {
-				Chance          int   `json:"chance"`
-				ConditionValues []any `json:"condition_values"`
-				MaxLevel        int   `json:"max_level"`
-				Method          struct {
-					Name string `json:"name"`
-					URL  string `json:"url"`
-				} `json:"method"`
-				MinLevel int `json:"min_level"`
-			} `json:"encounter_details"`
-			MaxChance int `json:"max_chance"`
-			Version   struct {
-				Name string `json:"name"`
-				URL  string `json:"url"`
-			} `json:"version"`
-		} `json:"version_details"`
 	} `json:"pokemon_encounters"`
+}
+
+type Pokemon struct {
+	Name           string `json:"name"`
+	BaseExperience int    `json:"base_experience"`
 }
 
 type Client struct {
@@ -106,6 +67,7 @@ func (c *Client) ListLocations(pageUrl *string) (LocationResponse, error) {
 		if err != nil {
 			return LocationResponse{}, err
 		}
+		return response, nil
 	}
 
 	// Make network request if not found in cache
@@ -147,6 +109,7 @@ func (c *Client) ListPokemon(areaName string) (PokemonResponse, error) {
 		if err != nil {
 			return PokemonResponse{}, err
 		}
+		return response, nil
 	}
 
 	// Make network request if not found in cache
@@ -176,4 +139,46 @@ func (c *Client) ListPokemon(areaName string) (PokemonResponse, error) {
 	c.cache.Add(url, data)
 
 	return pokemonResp, nil
+}
+
+func (c *Client) GetPokemon(pokemonName string) (Pokemon, error) {
+	url := baseUrl + "/pokemon/" + pokemonName
+
+	// Check cache first
+	if rawData, found := c.cache.Get(&url); found {
+		response := Pokemon{}
+		err := json.Unmarshal(rawData, &response)
+		if err != nil {
+			return Pokemon{}, err
+		}
+		return response, err
+	}
+
+	// Make network request if not found in cache
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return Pokemon{}, err
+	}
+
+	response, err := c.client.Do(request)
+	if err != nil {
+		return Pokemon{}, nil
+	}
+	defer response.Body.Close()
+
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		return Pokemon{}, err
+	}
+
+	expResponse := Pokemon{}
+	err = json.Unmarshal(data, &expResponse)
+	if err != nil {
+		return Pokemon{}, err
+	}
+
+	// Add data to cache
+	c.cache.Add(url, data)
+
+	return expResponse, nil
 }

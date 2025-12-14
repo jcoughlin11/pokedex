@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -14,7 +15,13 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	client := pokeapi.NewClient(5 * time.Second)
-	cfg := config{client: client}
+
+	source := rand.NewSource(time.Now().UnixNano())
+	rng := rand.New(source)
+
+	pokedex := make(map[string]pokeapi.Pokemon, 0)
+
+	cfg := config{client: client, rng: rng, pokedex: pokedex}
 
 	for {
 		fmt.Print("Pokedex > ")

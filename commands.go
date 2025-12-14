@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 
 	"github.com/jcoughlin11/pokedexcli/internal/pokeapi"
@@ -10,8 +11,10 @@ import (
 
 type config struct {
 	client  pokeapi.Client
+	pokedex map[string]pokeapi.Pokemon
 	nextUrl *string
 	prevUrl *string
+	rng     *rand.Rand
 }
 
 type cliCommand struct {
@@ -51,6 +54,12 @@ func registerCommands() {
 		name:        "explore",
 		description: "Lists pokemon available in the given area.",
 		callback:    commandExplore,
+	}
+
+	KnownCommands["catch"] = cliCommand{
+		name:        "catch",
+		description: "Attempts to catch the given pokemon.",
+		callback:    commandCatch,
 	}
 }
 
@@ -116,6 +125,31 @@ func commandExplore(cfg *config, areaName string) error {
 	fmt.Printf("Found Pokemon:\n")
 	for _, encounter := range response.PokemonEncounters {
 		fmt.Printf(" - %s\n", encounter.Pokemon.Name)
+	}
+
+	return nil
+}
+
+func commandCatch(cfg *config, pokemonName string) error {
+	response, err := cfg.client.GetPokemon(pokemonName)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemonName)
+
+	// Generate a random number in [0, 1). If that number is > baseExp
+	// / 100, we catch it. This makes it so the higher the baseExp,
+	// the lower the chance of catching it
+	randN := cfg.rng.Float64()
+	fmt.Printf("rand: %v\n", randN)
+	fmt.Printf("baseexp: %v\n", response.BaseExperience)
+
+	if randN > (float64(response.BaseExperience) / 1000.0) {
+		fmt.Printf("%s was caught!\n", pokemonName)
+		cfg.pokedex[pokemonName] = response
+	} else {
+		fmt.Printf("%s escaped!\n", pokemonName)
 	}
 
 	return nil
