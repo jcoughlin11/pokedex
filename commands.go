@@ -61,6 +61,12 @@ func registerCommands() {
 		description: "Attempts to catch the given pokemon.",
 		callback:    commandCatch,
 	}
+
+	KnownCommands["inspect"] = cliCommand{
+		name:        "inspect",
+		description: "Displays info about the given pokemon.",
+		callback:    commandInspect,
+	}
 }
 
 func commandExit(cfg *config, _ string) error {
@@ -150,6 +156,29 @@ func commandCatch(cfg *config, pokemonName string) error {
 		cfg.pokedex[pokemonName] = response
 	} else {
 		fmt.Printf("%s escaped!\n", pokemonName)
+	}
+
+	return nil
+}
+
+func commandInspect(cfg *config, pokemonName string) error {
+	info, ok := cfg.pokedex[pokemonName]
+
+	if !ok {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+
+	fmt.Printf("Name: %s\n", info.Name)
+	fmt.Printf("Height: %v\n", info.Height)
+	fmt.Printf("Weight: %v\n", info.Weight)
+	fmt.Println("Stats:")
+	for _, stat := range info.Stats {
+		fmt.Printf("  -%s: %v\n", stat.Stat.Name, stat.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, pokeType := range info.Types {
+		fmt.Printf("  - %s\n", pokeType.Type.Name)
 	}
 
 	return nil
