@@ -67,6 +67,12 @@ func registerCommands() {
 		description: "Displays info about the given pokemon.",
 		callback:    commandInspect,
 	}
+
+	KnownCommands["pokedex"] = cliCommand{
+		name:        "pokedex",
+		description: "Lists caught pokemon.",
+		callback:    commandPokedex,
+	}
 }
 
 func commandExit(cfg *config, _ string) error {
@@ -179,6 +185,15 @@ func commandInspect(cfg *config, pokemonName string) error {
 	fmt.Println("Types:")
 	for _, pokeType := range info.Types {
 		fmt.Printf("  - %s\n", pokeType.Type.Name)
+	}
+
+	return nil
+}
+
+func commandPokedex(cfg *config, _ string) error {
+	fmt.Println("Your Pokedex:")
+	for _, pokemon := range cfg.pokedex {
+		fmt.Printf("  - %s\n", pokemon.Name)
 	}
 
 	return nil
